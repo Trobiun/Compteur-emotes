@@ -8,11 +8,11 @@ EMOTES_GREPED=$(grep -o -h -w -i -r -f "$EMOTES_FILE" "$DIR_LOGS")				#récupèr
 TOTAL_WORDS=$(echo "$EMOTES_GREPED" | wc -l)							#compte le nombre total d'emotes utilisées
 COUNT_WORDS=$(echo "$EMOTES_GREPED" | sort -f | uniq -c -i | sed -e 's/^[[:space:]]*//')	#compte le nombre d'utilisation pour toutes les emotes
 TOTAL_LINES=$(grep -w -i -r -f "$EMOTES_FILE" "$DIR_LOGS" | wc -l)				#compte le nombre total de lignes contenant une emote
-SORTED=$(echo "$EMOTES_GREPED" | sort -f | uniq -c -i | sort -n | awk '{ print $2 " : " $1 }' ) #trie les emotes par utilisation et les affiche au début
-SORT=true
+SORT=false
 EMOTES_WHILE=$(cat "$EMOTES_FILE")								#définit les emotes qui seront parcourues par les emotes dans le fichier qui liste les emotes
 if [ "$SORT" = true ]
 then
+	SORTED=$(echo "$EMOTES_GREPED" | sort -f | uniq -c -i | sort -n | awk '{ print $2 " : " $1 }' ) #trie les emotes par utilisation et les place au début de la ligne
 	EMOTES_WHILE=$(echo "$SORTED" | cut -d ":" -f 1)					#définit le emotes qui seront parcourues par les emotes triées par utilisation
 	echo "Triées par nombre d'utlisation"
 else
