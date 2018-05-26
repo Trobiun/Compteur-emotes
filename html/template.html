@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset=UTF-8>
+		<title>Compteur-emotes</title>
+		<link rel=\"stylesheet\" href=\"style.css\">
+	</head>
+	<body>
+		<h2>Statistiques faites sur ${days} jours et ${all_lines} lignes :</h2>
+		<h3>Triées par ${sort_message} :</h3>
+		$(for i in $(seq 1 $(($(echo ${emotes_while} | wc -w) -0)) )
+		do
+			echo "<div class=\"tab\">"
+			echo "<h4>${emotes[$i]} : </h4>"
+			echo "	emotes		=	${words[$i]} / ${total_words}<br/>"
+			echo "	emotes/total	=	${emotes_per_total[$i]} %<br/>"
+			echo "	lignes		=	${count_lines[$i]} / ${total_lines}<br/>"
+			echo "	emotes/ligne	=	${words_per_line[$i]}<br/></div>"
+		done)
+	</body>
+</html>
