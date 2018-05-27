@@ -14,5 +14,6 @@ expand () {
 case $# in
  1) expand "$1";;
  2) . "$2"; expand "$1";;
- *) usage; exit 0;;
+ *) . "$2"; expand "$1";;
+# *) usage; exit 0;;
 esac
