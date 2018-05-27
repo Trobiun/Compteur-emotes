@@ -1,14 +1,14 @@
 #!/bin/bash
 dir_logs="/var/lib/znc/users/trobiun/networks/twitch/moddata/log/#mygowd"			#le répertoire des fichiers de log
-emotes_file="listEmotes.txt"									#le fichier contenant les emotes à compter
+emotes_file="emotes_list.txt"									#le fichier contenant les emotes à compter
 days=$(find "$dir_logs" | wc -l)
-all_lines=$(grep -r "\*\*\*" "$dir_logs" | wc -l)
+all_lines=$(grep --recursive --invert-match "\*\*\*" "$dir_logs" | wc -l)
 echo "Statistiques faites sur $days jours et $all_lines lignes :"
 emotes_greped=$(grep -o -h -w -i -r -f "$emotes_file" "$dir_logs")				#récupère chaque utilisation de toutes les emotes
 total_words=$(echo "$emotes_greped" | wc -l)							#compte le nombre total d'emotes utilisées
 count_words=$(echo "$emotes_greped" | sort -f | uniq -c -i | sed -e 's/^[[:space:]]*//')	#compte le nombre d'utilisation pour toutes les emotes
 total_lines=$(grep -w -i -r -f "$emotes_file" "$dir_logs" | wc -l)				#compte le nombre total de lignes contenant une emote
-sort=false
+sort=true
 emotes_while=$(cat "$emotes_file")								#définit les emotes qui seront parcourues par les emotes dans le fichier qui liste les emotes
 if [ "$sort" = true ]
 then
