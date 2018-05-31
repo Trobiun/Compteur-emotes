@@ -2,19 +2,28 @@
 <html>
 	<head>
 		<meta charset=UTF-8>
-		<title>Compteur-emotes</title>
+		<title>Compteur emotes</title>
 		<link rel=\"stylesheet\" href=\"style.css\">
 	</head>
 	<body>
-		<h2>Statistiques faites sur ${days} jours et ${all_lines} lignes :</h2>
-		<h3>Triées par ${sort_message} :</h3>
-		$(for i in $(seq 1 $(($(echo ${emotes_while} | wc -w) -0)) )
+		<p>Utilisation :<br/>
+			sortby=numeric => tri par utilisation<br/>
+			order=asc => ordre croissant<br/>
+			order=dsc => ordre décroissant<br/>
+		</p>
+		<h2>Statistiques faites sur ${count_days} jours et ${count_lines_conv} lignes :</h2>
+		<h3>Nombre de lignes contenant au moins une emote : ${count_lines_with_emotes}</h3>
+		<h3>Pourcentage de lignes contenant au moins une emote : ${percent_lines_with_emotes}</h3>
+		<h3>Moyenne d'emotes par ligne qui en contient au moins une : ${average_emotes_per_line}</h3>
+		<h3>Tri par ${sort_message} :</h3>
+		$(for i in $(seq 1 $(($(echo ${emotes_while} | wc --words) -0)) )
 		do
 			echo "<div class=\"tab\">"
 			echo "<h4>${emotes[$i]} : </h4>"
-			echo "	emotes		=	${words[$i]} / ${total_words}<br/>"
+			echo "	emotes		=	${words[$i]} / ${count_total_emotes}<br/>"
 			echo "	emotes/total	=	${emotes_per_total[$i]} %<br/>"
-			echo "	lignes		=	${count_lines[$i]} / ${total_lines}<br/>"
+			echo "	lignes		=	${count_lines[$i]} / ${emotes_lines}<br/>"
+			echo "	"
 			echo "	emotes/ligne	=	${words_per_line[$i]}<br/></div>"
 		done)
 	</body>
