@@ -2,93 +2,129 @@
 set -o errexit
 set -o nounset
 
+#fonctions
+mysort() {
+	sortArgs="--ignore-case"
+	if [ "${1}" = "numeric" ]
+	then
+		sortArgs="--numeric-sort"
+	else
+		sortArgs="--dictionary-order ${sortArgs}"
+	fi
+	if [ "$order" = "dsc" ]
+	then
+		sortArgs="--reverse ${sortArgs}"
+	fi
+	count_words="${*:3}"
+	if [ "${1}" = "numeric" ]
+	then
+		emotes_while=$(sort ${sortArgs} <<< "${count_words}" | awk '{ print $2 ":" $1 }')
+	else
+		emotes_while=$(awk '{ print $2 ":" $1 }' <<< "${count_words}" | sort ${sortArgs})
+	fi
+	echo "${emotes_while}"
+}
+
 users_array_to_file() {
-	list_users="$@"
-	echo "${list_users[@]}" | sed --expression='s/[[:space:]]/\n/g' | sed --expression='s/^/</g' | sed --expression='s/$/>/g' >  "${LIST_USER_FILE}"
+	sed -E 's/[[:space:]]/\n/gm; s/^/</gm; s/$/>/gm' <<< "$@" > "${LIST_USER_FILE}"
 }
 
 filterlist() {
-	whitelist="$1"
-	#list_lines="${@:2}"
+	whitelist="$1"		#$1= true pour whitelist, false pour blacklist
 	grep_args="--word-regexp --file=${LIST_USER_FILE}"
 	if [ "${whitelist}" = "false" ]
 	then
 		grep_args="--invert-match ${grep_args}"
 	fi
-	#exit;
-	list_greped=$(echo "${@:2}" | grep $grep_args)
+	list_greped=$(grep $grep_args <<< "${@:2}")
 	echo "${list_greped}"
 }
 
-DIR_LOGS="/var/lib/znc/users/trobiun/networks/twitch/moddata/log/#mygowd"
-EMOTES_FILE="emotes.list"
+DIR_LOGS="/var/lib/znc/users/trobiun/networks/twitch/moddata/log/#mygowd"			#le répertoire des fichiers de log
+EMOTES_FILE="emotes.list"									#le fichier contenant les emotes à compter
 LIST_USER_FILE="users_list.txt"									#le fichier pour whitelist et blacklist les  utilisateurs
-#arguments provenant de l'appel
-sortby="${@:1:1}"
-order="${@:2:1}"
 
 #grep en premier les utilisateurs puis calculer  les emotes_greped ?
 #ou enlever le -o dans emotes_greped puis grep les utilisateurs puis
 #regrep les emotes ?
 #à tester la rapidité, la 1ère est peut-être mieux
-declare -a blacklist_users=("trobiun" "nyanmaruchan" "xanagi" "lernardeau")
+declare -a blacklist_users=()
 declare -a whitelist_users=()
 
-all_lines=$(find "${DIR_LOGS}" -type f -exec cat  '{}' ';' | grep --invert-match "\*\*\*")
-#echo "${all_lines}"
-#blacklist_greped="${DIR_LOGS}"
-#if [ "${blacklistUsers[0]}" ]
-#then
-	#for user in "${blacklistUsers[@]}"
-	#do
-	#	echo "${user}"
-	#done
-#	echo "${blacklistUsers[@]}" | sed -e 's/[[:space:]]/\n/g' | sed -e 's/^/</g' | sed -e 's/$/>/g' >  "blacklistUsers.txt"
-	#grep -r <<< "${DIR_LOGS}" -f "blacklistUsers.txt"
-#	blacklist_greped=$(grep -w --file="blacklistUsers.txt" --recursive "${DIR_LOGS}")
-	#echo "${blacklist_greped}"
-#fi
-#exit;
+#arguments provenant de l'appel du script
+sortby="${1}"
+order="${2}"
 
-days=$(find "${DIR_LOGS}" | wc --lines)
-count_all_lines=$(echo "${all_lines}" | wc --lines)
-#echo "$count_all_lines"
-users_array_to_file "${blacklist_users[@]}"
-#cat "${LIST_USER_FILE}"
-test=$(filterlist "true" "${all_lines}")
-#echo "${test}"
-#exit;
-#all_lines=$(grep -r "\*\*\*" "${DIR_LOGS}" | wc -l)
-echo "Statistiques faites sur ${days} jours et ${count_all_lines} lignes :"
-emotes_greped=$(echo "${all_lines}" | grep --only-matching --no-filename --word-regexp --ignore-case  --file="${EMOTES_FILE}")				#récupère chaque utilisation de toutes les emotes
-#echo "$emotes_greped"
-#exit;
-total_words=$(echo "$emotes_greped" | wc --lines)							#compte le nombre total d'emotes utilisées
-count_words=$(echo "$emotes_greped" | sort -f | uniq --count --ignore-case | sed --expression='s/^[[:space:]]*//')	#compte le nombre d'utilisation pour toutes les emotes
-total_lines=$(grep --word-regexp --ignore-case --recursive --file="${EMOTES_FILE}" "${DIR_LOGS}" | wc --lines)				#compte le nombre total de lignes contenant une emote
-sort=false
-emotes_while=$(cat "${EMOTES_FILE}")								#définit les emotes qui seront parcourues par les emotes dans le fichier qui liste les emotes
-if [ "$sort" = true ]
+count_days=$(find "${DIR_LOGS}" -type f | wc --lines)
+lines_conv=$(find "${DIR_LOGS}" -type f -exec cat  '{}' ';' | grep --invert-match "\*\*\*")
+count_lines_conv=$(wc --lines <<< "${lines_conv}")
+
+lines_with_emotes=$(grep --no-filename --word-regexp --ignore-case --recursive --file="${EMOTES_FILE}" "${DIR_LOGS}")
+
+lines="${lines_with_emotes}"
+if [ "${blacklist_users[*]}" ]
 then
-	sorted=$(echo "$emotes_greped" | sort -f | uniq --count --ignore-case | sort --numeric-sort | awk '{ print $2 " : " $1 }' ) #trie les emotes par utilisation et les place au début de la ligne
-	emotes_while=$(echo "$sorted" | cut --delimiter=":" --fields=1)					#définit le emotes qui seront parcourues par les emotes triées par utilisation
-	echo "Triées par nombre d'utlisation"
-else
-	echo "Triées par ordre alphabétique"
+	users_array_to_file "${blacklist_users[@]}"
+	lines=$(filterlist "false" "${lines}")
 fi
+if [ "${whitelist_users[*]}" ]
+then
+	users_array_to_file "${whitelist_users[@]}"
+	lines=$(filterlist "true" "${lines}")
+fi
+if [ "${order}" = "asc" ]
+then
+	orderMessage="croissant"
+else
+	orderMessage="décroissant"
+fi
+if [ "${sortby}" = "numeric" ]
+then
+	sort_message="utilisation ${orderMessage}"
+else
+	sort_message="ordre alphabétique ${orderMessage}"
+fi
+count_lines_with_emotes=$(echo "${lines}" | wc --lines)
+
+percent_lines_with_emotes=$(bc --mathlib <<< "scale=7; (${count_lines_with_emotes} / ${count_lines_conv}) * 100")
+emotes_greped=$(echo "${lines}" | grep --only-matching --no-filename --word-regexp --ignore-case  --file="${EMOTES_FILE}")
+
+count_total_emotes=$(echo "${emotes_greped}" | wc --lines)							#compte le nombre total d'emotes utilisées
+use_per_emote=$(sort --ignore-case <<< "${emotes_greped}" | uniq --count --ignore-case | sed --expression='s/^[[:space:]]*//')
+average_emotes_per_line=$(bc --mathlib <<< "scale=7; ${count_total_emotes} / ${count_lines_with_emotes}")
+
+#count_words=$(sort -f <<< "${emotes_greped}" | uniq --count --ignore-case | sed --expression='s/^[[:space:]]*//')	#compte le nombre d'utilisation pour toutes les emotes
+#total_lines=$(grep --word-regexp --ignore-case --recursive --file="${EMOTES_FILE}" "${DIR_LOGS}" | wc --lines)				#compte le nombre total de lignes contenant une emote
+
+echo "Statistiques faites sur ${count_days} jours et ${count_lines_conv} lignes :"
+echo "Tri par ${sort_message} :"
+echo "Nombre de lignes contenant au moins une emote : ${count_lines_with_emotes}"
+echo "Pourcentage de lignes contenant au moins une emote : ${percent_lines_with_emotes}"
+echo "Moyenne d'emotes par ligne contenant au moins une emote : ${average_emotes_per_line}"
+
+emotes_while=$(mysort "${sortby}" "${order}" "${use_per_emote[@]}")  #cat "${EMOTES_FILE}")								#définit les emotes qui seront parcourues par les emotes dans le fichier qui liste les emotes
+
 while read -r emote;										#parcourt le fichier EMOTES_FILE
 do
-	words=$(echo "${count_words}" | grep --ignore-case --word-regexp "$emote" | cut --delimiter=" " --fields=1)			#récupère le nombre d'utilisation (en mots) de l'emote actuelle
-	count_lines=$(grep --word-regexp --ignore-case --recursive "$emote" "${DIR_LOGS}" | wc --lines)				#compte le nombre de lignes dans lesquelles l'emote apparaît
-	echo "$emote :"										#affiche l'emote
-	echo "	emotes		= $words	/ $total_words"					#affiche le nombre d'utilisation (en mots) de l'emote et le total
-	emotes_per_total=$(echo "scale=7; (${words} / ${total_words}) * 100" | bc --mathlib)			#calcule le poucentage d'utilisation (en mots) de l'emote
-	echo "	emote/total	= $emotes_per_total %"						#affiche le pourcentage d'utilisation (en mots) de l'emote
-	echo "	lignes		= $count_lines	/ $total_lines"					#affiche le nombre de lignes contenant l'emote actuelle et le total de lignes contenant une emote
-	words_per_line=$(echo "scale=7; ${words} / ${count_lines}" | bc --mathlib)				#calcule le nombre d'emote utilisée par ligne
-	echo "	emotes/ligne	= $words_per_line"						#affiche le nombre d'emote utilisée par ligne
-done <<< "$emotes_while"
+	words_for_emote=0; count_lines_for_emote=0; emotes_per_total=0; emote_per_line=0;
+	emote=$(cut --delimiter=":" --fields=1 <<< "${emote}")
+	words_for_emote=$(grep --ignore-case --word-regexp "${emote}" <<< "${use_per_emote}" | cut --delimiter=" " --fields=1)			#récupère le nombre d'utilisation (en mots) de l'emote actuelle
+	count_lines_for_emote=$(echo "${lines}" | grep --word-regexp --count --ignore-case "$emote")				#compte le nombre de lignes dans lesquelles l'emote apparaît
+	echo "${emote} :"										#affiche l'emote
+	echo "	emotes		= ${words_for_emote}	/ ${count_total_emotes}"					#affiche le nombre d'utilisation (en mots) de l'emote et le total
+	if [ "${words_for_emote}"  ]
+	then
+		emotes_per_total=$(bc --mathlib <<< "scale=7; (${words_for_emote} / ${count_total_emotes}) * 100")			#calcule le poucentage d'utilisation (en mots) de l'emote
+	fi
+	echo "	emote/total	= ${emotes_per_total} %"						#affiche le pourcentage d'utilisation (en mots) de l'emote
+	echo "	lignes		= ${count_lines_for_emote}	/ ${count_lines_with_emotes}"					#affiche le nombre de lignes contenant l'emote actuelle et le total de lignes contenant une emote
+	if [ "${words_for_emote}" ]
+	then
+		emote_per_line=$(bc --mathlib <<< "scale=7; ${words_for_emote} / ${count_lines_for_emote}")				#calcule le nombre d'emote utilisée par ligne
+	fi
+	echo "	emotes/ligne	= ${emote_per_line}"						#affiche le nombre d'emote utilisée par ligne
+done <<< "${emotes_while}"
 if [ -f "${LIST_USER_FILE}" ]
 then
-	rm "${LIST_USER_FILE}"
+	rm -f "${LIST_USER_FILE}"
 fi

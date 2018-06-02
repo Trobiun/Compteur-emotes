@@ -18,27 +18,24 @@ mysort() {
 	count_words="${*:3}"
 	if [ "${1}" = "numeric" ]
 	then
-	emotes_while=$(echo "${count_words}" | sort ${sortArgs} | awk '{ print $2 ":" $1 }')
+		emotes_while=$(sort ${sortArgs} <<< "${count_words}" | awk '{ print $2 ":" $1 }')
 	else
-		emotes_while=$(echo "${count_words}" | awk '{ print $2 ":" $1 }' | sort ${sortArgs})
+		emotes_while=$(awk '{ print $2 ":" $1 }' <<< "${count_words}" | sort ${sortArgs})
 	fi
 	echo "${emotes_while}"
 }
 
 users_array_to_file() {
-	#sed --expression='s/[[:space:]]/\n/g' --expression='s/^/</g' --expression='s/$/>/g' <<< "$@" > "${LIST_USER_FILE}"
-	#sed --expression='s/[[:space:]]/\n/g; s/^/</g; s/$/>/g' <<< "$@" > "${LIST_USER_FILE}"
-	sed --expression='s/[[:space:]]/\n/g' <<< "$@" | sed --expression='s/^/</g' | sed --expression='s/$/>/g' > "${LIST_USER_FILE}"
+	sed -E 's/[[:space:]]/\n/gm; s/^/</gm; s/$/>/gm' <<< "$@" > "${LIST_USER_FILE}"
 }
 
 filterlist() {
-	whitelist="$1"					#$1= true pour whitelist, false pour blacklist
+	whitelist="$1"		#$1= true pour whitelist, false pour blacklist
 	grep_args="--word-regexp --file=${LIST_USER_FILE}"
 	if [ "${whitelist}" = "false" ]
 	then
 		grep_args="--invert-match ${grep_args}"
 	fi
-	#echo "${LIST_USER_FILE}";exit;
 	list_greped=$(grep $grep_args <<< "${@:2}")
 	echo "${list_greped}"
 }
@@ -52,20 +49,19 @@ LIST_USER_FILE="users_list.txt"									#le fichier pour whitelist et blacklist 
 #regrep les emotes ?
 #à tester la rapidité, la 1ère est peut-être mieux
 declare -a blacklist_users=()
-declare -a whitelist_users=("lernardeau" "trobiun" "nyanmaruchan")
+declare -a whitelist_users=()
 
 #arguments provenant de l'appel du script
 sortby="${1}"
 order="${2}"
 
 count_days=$(find "${DIR_LOGS}" -type f | wc --lines)
-#lines_conv=$(find "${DIR_LOGS}" -type f -exec cat  '{}' ';' | grep --invert-match "\*\*\*")
-lines_conv=$(grep --recursive --invert-match "\*\*\*" "${DIR_LOGS}")
+lines_conv=$(find "${DIR_LOGS}" -type f -exec cat  '{}' ';' | grep --invert-match "\*\*\*")
 count_lines_conv=$(wc --lines <<< "${lines_conv}")
+
 lines_with_emotes=$(grep --no-filename --word-regexp --ignore-case --recursive --file="${EMOTES_FILE}" "${DIR_LOGS}")
-#count_lines_with_emotes=$(wc --lines <<< "${lines_with_emotes}")
+
 lines="${lines_with_emotes}"
-#count_lines_conv=$(wc --lines <<< "${lines_conv}")
 if [ "${blacklist_users[*]}" ]
 then
 	users_array_to_file "${blacklist_users[@]}"
@@ -88,13 +84,13 @@ then
 else
 	sort_message="ordre alphabétique ${orderMessage}"
 fi
-count_lines_with_emotes=$(wc --lines <<< "${lines}")
+count_lines_with_emotes=$(echo "${lines}" | wc --lines)
+
 percent_lines_with_emotes=$(bc --mathlib <<< "scale=7; (${count_lines_with_emotes} / ${count_lines_conv}) * 100")
-emotes_greped=$(grep --only-matching --no-filename --word-regexp --ignore-case  --file="${EMOTES_FILE}" <<< "${lines}")				#récupère chaque utilisation de toutes les emotes
+emotes_greped=$(echo "${lines}" | grep --only-matching --no-filename --word-regexp --ignore-case  --file="${EMOTES_FILE}")
 
-count_total_emotes=$(wc --lines <<< "${emotes_greped}")							#compte le nombre total d'emotes utilisées
-
-use_per_emote=$(echo "${emotes_greped}" | sort --ignore-case | uniq --count --ignore-case | sed --expression='s/^[[:space:]]*//')
+count_total_emotes=$(echo "${emotes_greped}" | wc --lines)							#compte le nombre total d'emotes utilisées
+use_per_emote=$(sort --ignore-case <<< "${emotes_greped}" | uniq --count --ignore-case | sed --expression='s/^[[:space:]]*//')
 average_emotes_per_line=$(bc --mathlib <<< "scale=7; ${count_total_emotes} / ${count_lines_with_emotes}")
 
 #count_words=$(sort -f <<< "${emotes_greped}" | uniq --count --ignore-case | sed --expression='s/^[[:space:]]*//')	#compte le nombre d'utilisation pour toutes les emotes
@@ -113,8 +109,7 @@ do
 	words_for_emote=0; count_lines_for_emote=0; emotes_per_total=0; emote_per_line=0;
 	emote=$(cut --delimiter=":" --fields=1 <<< "${emote}")
 	words_for_emote=$(grep --ignore-case --word-regexp "${emote}" <<< "${use_per_emote}" | cut --delimiter=" " --fields=1)			#récupère le nombre d'utilisation (en mots) de l'emote actuelle
-	#count_lines_for_emote=$(grep --word-regexp --ignore-case "$emote"  <<< "${lines}" | wc --lines)				#compte le nombre de lignes dans lesquelles l'emote apparaît
-	count_lines_for_emote=$(grep --word-regexp --count --ignore-case "$emote"  <<< "${lines}")				#compte le nombre de lignes dans lesquelles l'emote apparaît
+	count_lines_for_emote=$(echo "${lines}" | grep --word-regexp --count --ignore-case "$emote")				#compte le nombre de lignes dans lesquelles l'emote apparaît
 	echo "${emote} :"										#affiche l'emote
 	echo "	emotes		= ${words_for_emote}	/ ${count_total_emotes}"					#affiche le nombre d'utilisation (en mots) de l'emote et le total
 	if [ "${words_for_emote}"  ]
