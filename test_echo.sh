@@ -2,9 +2,12 @@
 set -o errexit
 set -o nounset
 
+DIR_LOGS="/var/lib/znc/users/trobiun/networks/twitch/moddata/log/#mygowd"			#le répertoire des fichiers de log
+EMOTES_FILE="emotes_list.txt"									#le fichier contenant les emotes à compter
+LIST_USER_FILE="users_list.txt"									#le fichier pour whitelist et blacklist les  utilisateurs
+
 users_array_to_file() {
-	list_users="$@"
-	echo "${list_users[@]}" | sed --expression='s/[[:space:]]/\n/g' | sed --expression='s/^/</g' | sed --expression='s/$/>/g' >  "${LIST_USER_FILE}"
+	echo "$@" | sed --expression='s/[[:space:]]/\n/g' | sed --expression='s/^/</g' | sed --expression='s/$/>/g' > "${LIST_USER_FILE}"
 }
 
 filterlist() {
@@ -20,49 +23,28 @@ filterlist() {
 	echo "${list_greped}"
 }
 
-DIR_LOGS="/var/lib/znc/users/trobiun/networks/twitch/moddata/log/#mygowd"
-EMOTES_FILE="emotes.list"
-LIST_USER_FILE="users_list.txt"									#le fichier pour whitelist et blacklist les  utilisateurs
-#arguments provenant de l'appel
-sortby="${@:1:1}"
-order="${@:2:1}"
-
 #grep en premier les utilisateurs puis calculer  les emotes_greped ?
 #ou enlever le -o dans emotes_greped puis grep les utilisateurs puis
 #regrep les emotes ?
 #à tester la rapidité, la 1ère est peut-être mieux
 declare -a blacklist_users=("trobiun" "nyanmaruchan" "xanagi" "lernardeau")
 declare -a whitelist_users=()
+lines=$(find "${DIR_LOGS}" -type f -exec cat  '{}' ';' | grep --invert-match "\*\*\*")
 
-all_lines=$(find "${DIR_LOGS}" -type f -exec cat  '{}' ';' | grep --invert-match "\*\*\*")
-#echo "${all_lines}"
-#blacklist_greped="${DIR_LOGS}"
-#if [ "${blacklistUsers[0]}" ]
-#then
-	#for user in "${blacklistUsers[@]}"
-	#do
-	#	echo "${user}"
-	#done
-#	echo "${blacklistUsers[@]}" | sed -e 's/[[:space:]]/\n/g' | sed -e 's/^/</g' | sed -e 's/$/>/g' >  "blacklistUsers.txt"
-	#grep -r <<< "${DIR_LOGS}" -f "blacklistUsers.txt"
-#	blacklist_greped=$(grep -w --file="blacklistUsers.txt" --recursive "${DIR_LOGS}")
-	#echo "${blacklist_greped}"
-#fi
-#exit;
-
-days=$(find "${DIR_LOGS}" | wc --lines)
-count_all_lines=$(echo "${all_lines}" | wc --lines)
-#echo "$count_all_lines"
-users_array_to_file "${blacklist_users[@]}"
-#cat "${LIST_USER_FILE}"
-test=$(filterlist "true" "${all_lines}")
-#echo "${test}"
-#exit;
-#all_lines=$(grep -r "\*\*\*" "${DIR_LOGS}" | wc -l)
+days=$(find "${DIR_LOGS}" -type f | wc --lines)
+count_all_lines=$(echo "${lines}" | wc --lines)
+if [ "${blakclist_users[@]}" ]
+then
+	user_array_to_file "${blacklist_users[@]}"
+	lines=$(filterlist "false" "${lines}")
+fi
+if [ "${whitelist_users[@]}" ]
+then
+	users_array_to_file "${whitelist_users[@]}"
+	lines=$(filterlist "true" "${lines}")
+fi
 echo "Statistiques faites sur ${days} jours et ${count_all_lines} lignes :"
-emotes_greped=$(echo "${all_lines}" | grep --only-matching --no-filename --word-regexp --ignore-case  --file="${EMOTES_FILE}")				#récupère chaque utilisation de toutes les emotes
-#echo "$emotes_greped"
-#exit;
+emotes_greped=$(echo "${lines}" | grep --only-matching --no-filename --word-regexp --ignore-case  --file="${EMOTES_FILE}")				#récupère chaque utilisation de toutes les emotes
 total_words=$(echo "$emotes_greped" | wc --lines)							#compte le nombre total d'emotes utilisées
 count_words=$(echo "$emotes_greped" | sort -f | uniq --count --ignore-case | sed --expression='s/^[[:space:]]*//')	#compte le nombre d'utilisation pour toutes les emotes
 total_lines=$(grep --word-regexp --ignore-case --recursive --file="${EMOTES_FILE}" "${DIR_LOGS}" | wc --lines)				#compte le nombre total de lignes contenant une emote
@@ -90,5 +72,5 @@ do
 done <<< "$emotes_while"
 if [ -f "${LIST_USER_FILE}" ]
 then
-	rm "${LIST_USER_FILE}"
+	rm -f "${LIST_USER_FILE}"
 fi
