@@ -38,7 +38,7 @@ count_lines_conv=$(wc --lines <<< "${lines_conv}")
 
 lines_with_emotes=$(grep --no-filename --word-regexp --ignore-case --recursive --file="${EMOTES_FILE}" "${DIR_LOGS}")
 count_lines_with_emotes=$(wc --lines <<< "${lines_with_emotes}")
-percent_lines_with_emotes=$(bc --mathlib <<< "scale=7; (${count_lines_with_emotes} / ${count_lines_conv}) * 100")
+percent_lines_with_emotes=$(bc --mathlib <<< "scale=7; (${count_lines_with_emotes} * 100) / ${count_lines_conv}")
 
 emotes_greped=$(grep --only-matching --no-filename --word-regexp --ignore-case --file="${EMOTES_FILE}" <<< "${lines_with_emotes}")
 
@@ -73,7 +73,7 @@ do
 	emotes[$i]=$(cut --delimiter=":" --fields=1 <<< "${emote}")
 	words[$i]=$(grep --ignore-case --word-regexp "${emotes[$i]}" <<< "${use_per_emote}" | cut --delimiter=" " --fields=1)			#récupère le nombre d'utilisation (en mots) de l'emote actuelle
 	count_lines[$i]=$(grep --word-regexp --ignore-case --recursive "${emotes[$i]}" "${DIR_LOGS}" | wc --lines)				#compte le nombre de lignes dans lesquelles l'emote apparaît
-	emotes_per_total[$i]=$(bc --mathlib <<< "scale=7; (${words[$i]} / ${count_total_emotes}) * 100")	#calcule le poucentage d'utilisation (en mots) de l'emote
+	emotes_per_total[$i]=$(bc --mathlib <<< "scale=7; (${words[$i]} * 100) / ${count_total_emotes}")	#calcule le poucentage d'utilisation (en mots) de l'emote
 	words_per_line[$i]=$(bc --mathlib <<< "scale=7; ${words[$i]} / ${count_lines[$i]}")		#calcule le nombre d'emote utilisée par ligne
 	((i++))
 done <<< "${emotes_while}"
