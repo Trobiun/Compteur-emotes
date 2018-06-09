@@ -15,7 +15,7 @@ mysort() {
 	then
 		sortArgs="--reverse ${sortArgs}"
 	fi
-	count_words="${*:3}"
+	count_words="${@:3}"
 	if [ "${1}" = "numeric" ]
 	then
 		emotes_while=$(sort ${sortArgs} <<< "${count_words}" | awk '{ print $2 ":" $1 }')
@@ -86,7 +86,7 @@ else
 fi
 count_lines_with_emotes=$(echo "${lines}" | wc --lines)
 
-percent_lines_with_emotes=$(bc --mathlib <<< "scale=7; (${count_lines_with_emotes} / ${count_lines_conv}) * 100")
+percent_lines_with_emotes=$(bc --mathlib <<< "scale=7; (${count_lines_with_emotes} * 100) / ${count_lines_conv}")
 emotes_greped=$(echo "${lines}" | grep --only-matching --no-filename --word-regexp --ignore-case  --file="${EMOTES_FILE}")
 
 count_total_emotes=$(echo "${emotes_greped}" | wc --lines)							#compte le nombre total d'emotes utilisées
@@ -114,7 +114,7 @@ do
 	echo "	emotes		= ${words_for_emote}	/ ${count_total_emotes}"					#affiche le nombre d'utilisation (en mots) de l'emote et le total
 	if [ "${words_for_emote}"  ]
 	then
-		emotes_per_total=$(bc --mathlib <<< "scale=7; (${words_for_emote} / ${count_total_emotes}) * 100")			#calcule le poucentage d'utilisation (en mots) de l'emote
+		emotes_per_total=$(bc --mathlib <<< "scale=7; (${words_for_emote} * 100) / ${count_total_emotes}")			#calcule le poucentage d'utilisation (en mots) de l'emote
 	fi
 	echo "	emote/total	= ${emotes_per_total} %"						#affiche le pourcentage d'utilisation (en mots) de l'emote
 	echo "	lignes		= ${count_lines_for_emote}	/ ${count_lines_with_emotes}"					#affiche le nombre de lignes contenant l'emote actuelle et le total de lignes contenant une emote

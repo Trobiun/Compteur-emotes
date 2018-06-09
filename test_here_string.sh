@@ -49,7 +49,7 @@ LIST_USER_FILE="users_list.txt"									#le fichier pour whitelist et blacklist 
 #regrep les emotes ?
 #à tester la rapidité, la 1ère est peut-être mieux
 declare -a blacklist_users=()
-declare -a whitelist_users=()
+declare -a whitelist_users=("nyanmaruchan")
 
 #arguments provenant de l'appel du script
 sortby="${1}"
@@ -87,7 +87,7 @@ fi
 count_lines_with_emotes=$(echo "${lines}" | wc --lines)
 
 percent_lines_with_emotes=$(bc --mathlib <<< "scale=7; (${count_lines_with_emotes} / ${count_lines_conv}) * 100")
-emotes_greped=$(echo "${lines}" | grep --only-matching --no-filename --word-regexp --ignore-case  --file="${EMOTES_FILE}")
+emotes_greped=$(echo "${lines}" | grep --only-matching --no-filename --word-regexp --ignore-case --file="${EMOTES_FILE}")
 
 count_total_emotes=$(echo "${emotes_greped}" | wc --lines)							#compte le nombre total d'emotes utilisées
 use_per_emote=$(sort --ignore-case <<< "${emotes_greped}" | uniq --count --ignore-case | sed --expression='s/^[[:space:]]*//')

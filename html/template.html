@@ -20,9 +20,9 @@
 		do
 			echo "<div class=\"tab\">"
 			echo "<h4>${emotes[$i]} : </h4>"
-			echo "	emotes		=	${words[$i]} / ${count_total_emotes}<br/>"
+			echo "	emotes		=	${words_for_emote[$i]} / ${count_total_emotes}<br/>"
 			echo "	emotes/total	=	${emotes_per_total[$i]} %<br/>"
-			echo "	lignes		=	${count_lines[$i]} / ${emotes_lines}<br/>"
+			echo "	lignes		=	${count_lines_for_emote[$i]} / ${count_lines_with_emotes}<br/>"
 			echo "	"
 			echo "	emotes/ligne	=	${words_per_line[$i]}<br/></div>"
 		done)
