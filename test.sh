@@ -15,7 +15,7 @@ mysort() {
 	then
 		sortArgs="--reverse ${sortArgs}"
 	fi
-	count_words="${@:3}"
+	count_words="${*:3}"
 	if [ "${1}" = "numeric" ]
 	then
 		emotes_while=$(sort ${sortArgs} <<< "${count_words}" | awk '{ print $2 ":" $1 }')
@@ -99,7 +99,7 @@ average_emotes_per_line=$(bc --mathlib <<< "scale=7; ${count_total_emotes} / ${c
 echo "Statistiques faites sur ${count_days} jours et ${count_lines_conv} lignes :"
 echo "Tri par ${sort_message} :"
 echo "Nombre de lignes contenant au moins une emote : ${count_lines_with_emotes}"
-echo "Pourcentage de lignes contenant au moins une emote : ${percent_lines_with_emotes}"
+echo "Pourcentage de lignes contenant au moins une emote : ${percent_lines_with_emotes} %"
 echo "Moyenne d'emotes par ligne contenant au moins une emote : ${average_emotes_per_line}"
 
 emotes_while=$(mysort "${sortby}" "${order}" "${use_per_emote[@]}")  #cat "${EMOTES_FILE}")								#définit les emotes qui seront parcourues par les emotes dans le fichier qui liste les emotes
